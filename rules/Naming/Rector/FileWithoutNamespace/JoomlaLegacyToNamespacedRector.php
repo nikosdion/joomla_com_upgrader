@@ -241,25 +241,14 @@ CODE_SAMPLE
 		// Get the parent folder
 		$parentFolder = array_pop($pathBits);
 
-		// If the last folder we were in was tmpl then $parentFolder is the view name. Pop two.
-		if ($isTmpl)
-		{
-			$parentFolder = array_pop($pathBits);
-			$parentFolder = array_pop($pathBits);
-		}
-		// If the $parentFolder is views we need to pop one
-		elseif ($parentFolder === 'views')
-		{
-			$parentFolder = array_pop($pathBits);
-		}
-
-		// If the parent folder starts with com_ I will get its parent instead
+		// If the parent folder starts with com_ I will get its grandparent instead
 		if (substr($parentFolder, 0, 4) === 'com_')
 		{
 			$parentFolder = array_pop($pathBits);
+			$parentFolder = array_pop($pathBits);
 		}
 
-		switch (strtolower(trim($parentFolder)))
+		switch (strtolower(trim($parentFolder ?: '')))
 		{
 			case 'admin':
 			case 'administrator':
@@ -268,12 +257,41 @@ CODE_SAMPLE
 
 			case 'site':
 			case 'frontend':
-			default:
 				return 'Site';
 
 			case 'api':
 				return 'Api';
 		}
+
+		// I have no idea where I am. Okay, let's start going back until I find something that makes sense.
+		$pathBits = explode('/', $fullPath);
+
+		while (!empty($pathBits))
+		{
+			$lastFolder = array_pop($pathBits);
+
+			if (!in_array($lastFolder, self::ACCEPTABLE_CONTAINMENT_FOLDERS))
+			{
+				continue;
+			}
+
+			switch (strtolower(trim($lastFolder ?: '')))
+			{
+				case 'admin':
+				case 'administrator':
+				case 'backend':
+					return 'Administrator';
+
+				case 'site':
+				case 'frontend':
+					return 'Site';
+
+				case 'api':
+					return 'Api';
+			}
+		}
+
+		return 'Site';
 	}
 
 	/**
