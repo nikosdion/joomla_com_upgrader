@@ -31,29 +31,54 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 /**
  * A Rector rule to namespace legacy Joomla 3 MVC classes into Joomla 4+ MVC namespaced classes
  *
- * @see \Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector\JoomlaLegacyToNamespacedRectorTest
+ * @since  1.0.0
+ * @see    \Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector\JoomlaLegacyToNamespacedRectorTest
  */
 final class JoomlaLegacyToNamespacedRector extends AbstractRector implements ConfigurableRectorInterface
 {
+	/**
+	 * The acceptable folder names where component files can be placed in.
+	 *
+	 * @since 1.0.0
+	 * @var   string[]
+	 */
 	private const ACCEPTABLE_CONTAINMENT_FOLDERS = ['admin', 'administrator', 'backend', 'site', 'frontend', 'api'];
 
 	/**
-	 * @var JoomlaLegacyPrefixToNamespace[]
+	 * The configuration mapping legacy class prefixes to Joomla 4 namespaces.
+	 *
+	 * @since 1.0.0
+	 * @var   JoomlaLegacyPrefixToNamespace[]
 	 */
 	private $legacyPrefixesToNamespaces = [];
 
 	/**
-	 * @var null|string
+	 * The new namespace being applied to the current class file being refactored.
+	 *
+	 * @since 1.0.0
+	 * @var   null|string
 	 * @readonly
 	 */
 	private $newNamespace = null;
 
 	/**
-	 * @var RemovedAndAddedFilesCollector
+	 * Rector utility object which collects the filename changes
+	 *
+	 * @since 1.0.0
+	 * @var   RemovedAndAddedFilesCollector
 	 * @readonly
 	 */
 	private $removedAndAddedFilesCollector;
 
+	/**
+	 * Public constructor.
+	 *
+	 * Rector (well, Symfony) automatically pushes the dependencies we ask for through its DI container.
+	 *
+	 * @param   RemovedAndAddedFilesCollector  $removedAndAddedFilesCollector
+	 *
+	 * @since   1.0.0
+	 */
 	public function __construct(
 		RemovedAndAddedFilesCollector $removedAndAddedFilesCollector
 	)
@@ -62,7 +87,11 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	}
 
 	/**
-	 * @param   mixed[]  $configuration
+	 * Configuration handler. Called internally by Rector.
+	 *
+	 * @param   JoomlaLegacyPrefixToNamespace[]  $configuration
+	 *
+	 * @since   1.0.0
 	 */
 	public function configure(array $configuration): void
 	{
@@ -71,7 +100,10 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	}
 
 	/**
-	 * @return array<class-string<Node>>
+	 * Tell Rector which AST node types we can handle with this rule.
+	 *
+	 * @return  array<class-string<Node>>
+	 * @since   1.0.0
 	 */
 	public function getNodeTypes(): array
 	{
@@ -80,6 +112,15 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 		];
 	}
 
+	/**
+	 * Get the rule definition.
+	 *
+	 * This was used to generate the initial test fixture.
+	 *
+	 * @return  RuleDefinition
+	 * @throws  \Symplify\RuleDocGenerator\Exception\PoorDocumentationException
+	 * @since   1.0.0
+	 */
 	public function getRuleDefinition(): RuleDefinition
 	{
 		return new RuleDefinition('Convert legacy Joomla 3 MVC class names into Joomla 4 namespaced ones.', [
@@ -97,7 +138,11 @@ CODE_SAMPLE
 	}
 
 	/**
+	 * Performs the refactoring on the supported nodes.
+	 *
 	 * @param   FileWithoutNamespace|Namespace_  $node
+	 *
+	 * @since   1.0.0
 	 */
 	public function refactor(Node $node): ?Node
 	{
@@ -129,6 +174,12 @@ CODE_SAMPLE
 		return null;
 	}
 
+	/**
+	 * Try to guess the absolute filesystem path where the current side of the component is stored.
+	 *
+	 * @return  string|null  Null if we fail to divine this information.
+	 * @since   1.0.0
+	 */
 	private function divineExtensionRootFolder(): ?string
 	{
 		$path     = str_replace('\\', '/', $this->file->getFilePath());
@@ -162,7 +213,10 @@ CODE_SAMPLE
 	}
 
 	/**
-	 * @return string
+	 * Figure out which application side (admin, side or api) this file corresponds to.
+	 *
+	 * @return  string  One of 'Administrator', 'Site', 'Api'
+	 * @since   1.0.0
 	 */
 	private function getApplicationSide(): string
 	{
@@ -204,6 +258,19 @@ CODE_SAMPLE
 		}
 	}
 
+	/**
+	 * Convert a legacy Joomla 3 class name to its Joomla 4 namespaced equivalent.
+	 *
+	 * @param   string  $legacyClassName  The legacy class name, e.g. ExampleControllerFoobar
+	 * @param   string  $prefix           The common prefix of the legacy Joomla 3 classes, e.g. Example for
+	 *                                    com_example
+	 * @param   string  $newNamespace     The common namespace prefix for the Joomla 4 component
+	 * @param   bool    $isNewFile        Is this a file without a namespace already defined?
+	 *
+	 * @return  string  The FQN of the namespaced Joomla 4 class e.g.
+	 *                  \Acme\Example\Administrator\Controller\ExampleController
+	 * @since   1.0.0
+	 */
 	private function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace, bool $isNewFile = false): string
 	{
 		$applicationSide = $this->getApplicationSide();
@@ -276,7 +343,16 @@ CODE_SAMPLE
 		return $fqn;
 	}
 
-	private function moveFile($newNamespacePrefix, $fqn)
+	/**
+	 * Moves a (namespaced) file to its canonical PSR-4 folder
+	 *
+	 * @param   string  $newNamespacePrefix  The common namespace prefix for the component.
+	 * @param   string  $fqn                 The FQN of the class whose file is being moved.
+	 *
+	 * @return  void
+	 * @since   1.0.0
+	 */
+	private function moveFile(string $newNamespacePrefix, string $fqn)
 	{
 		// I also need to move the file
 		$thisSideRoot = $this->divineExtensionRootFolder();
@@ -296,13 +372,31 @@ CODE_SAMPLE
 			return;
 		}
 
+		/**
+		 * Convert the namespace \Acme\Example\Administrator\Controller\ExampleController to
+		 * /path/to/component/admin/src/Controller/ExampleController.php
+		 *
+		 * Logic:
+		 * * Start with \Acme\Example\Administrator\Controller\ExampleController
+		 * * Remove the common namespace, so it becomes Administrator\Controller\ExampleController
+		 * * Remove the first part (Administrator). We're left with Controller\ExampleController.
+		 * * Replace the backslashes with directory separators e.g. Controller/ExampleController
+		 * * Make the path by combining
+		 *    - The root of the component side e.g. /path/to/component/admin
+		 *    - The literal 'src'
+		 *    - The relative path from the previous step e.g. Controller/ExampleController
+		 *    - The literal '.php'
+		 * There we get /path/to/component/admin/src/Controller/ExampleController.php
+		 */
 		$relativeName = trim(substr($fqn, strlen($newNamespacePrefix)), '\\');
+		$fqnParts     = explode('\\', $relativeName);
+		array_shift($fqnParts);
+		$newPath = $thisSideRoot . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . implode(
+				DIRECTORY_SEPARATOR,
+				$fqnParts
+			);
 
-		$newPath = implode(
-			DIRECTORY_SEPARATOR,
-			explode('\\', $relativeName)
-		);
-
+		// Make sure we actually DO need to rename the file.
 		if ($this->file->getFilePath() === $newPath)
 		{
 			// Okay, this is already in the correct PSR-4 folder. Bye-bye!
@@ -313,6 +407,18 @@ CODE_SAMPLE
 		$this->removedAndAddedFilesCollector->addMovedFile($this->file, $newPath);
 	}
 
+	/**
+	 * Processes an Identifier node
+	 *
+	 * @param   Identifier  $identifier          The node to process
+	 * @param   string      $prefix              The legacy Joomla 3 prefix, e.g. Example
+	 * @param   string      $newNamespacePrefix  The Joomla 4 common namespace prefix e.g. \Acme\Example
+	 * @param   bool        $isNewFile           Is this a file without a namespace already defined?
+	 *
+	 * @return  Identifier|null  The refactored identified; null if no refactoring is necessary / possible
+	 * @throws  ShouldNotHappenException  A file had two classes in it yielding different namespaces. Don't do that!
+	 * @since   1.0.0
+	 */
 	private function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix, bool $isNewFile = false): ?Identifier
 	{
 		$parentNode = $identifier->getAttribute(AttributeKey::PARENT_NODE);
@@ -359,6 +465,17 @@ CODE_SAMPLE
 		return $identifier;
 	}
 
+	/**
+	 * Process a Name node
+	 *
+	 * @param   Name    $name                The node to refactor
+	 * @param   string  $prefix              The legacy Joomla 3 prefix, e.g. Example
+	 * @param   string  $newNamespacePrefix  The Joomla 4 common namespace prefix e.g. \Acme\Example
+	 * @param   bool    $isNewFile           Is this a file without a namespace already defined?
+	 *
+	 * @return  Name  The refactored Node. Original node if nothing was refactored.
+	 * @since   1.0.0
+	 */
 	private function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
 	{
 		// The class name
@@ -377,9 +494,12 @@ CODE_SAMPLE
 	}
 
 	/**
-	 * @param   \PhpParser\Node\Name|\PhpParser\Node\Identifier  $node
+	 * Process a Name or Identifier node but only if necessary!
 	 *
-	 * @return Identifier|Name|null
+	 * @param   Name|Identifier  $node  The node to possibly refactor
+	 *
+	 * @return  Identifier|Name|null  The refactored node; NULL if no refactoring was necessary / possible.
+	 * @since   1.0.0
 	 */
 	private function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
 	{
@@ -422,6 +542,14 @@ CODE_SAMPLE
 		return null;
 	}
 
+	/**
+	 * Refactor a namespace node
+	 *
+	 * @param   Namespace_  $namespace  The node to possibly refactor
+	 *
+	 * @return  Namespace_|null  The refactored node; NULL if nothing is refactored
+	 * @since   1.0.0
+	 */
 	private function refactorNamespace(Namespace_ $namespace): ?Namespace_
 	{
 		$changedStmts = $this->refactorStmts($namespace->stmts);
@@ -434,6 +562,15 @@ CODE_SAMPLE
 		return $namespace;
 	}
 
+	/**
+	 * Refactor an array of statement nodes
+	 *
+	 * @param   array  $stmts      The array of nodes to possibly refactor
+	 * @param   bool   $isNewFile  Is this a file without a namespace?
+	 *
+	 * @return  array|null  The array of refactored statements. NULL if was nothing to refactor.
+	 * @since   1.0.0
+	 */
 	private function refactorStmts(array $stmts, bool $isNewFile = false): ?array
 	{
 		$hasChanged = \false;
@@ -448,10 +585,6 @@ CODE_SAMPLE
 			{
 				return null;
 			}
-
-			//if ($this->refactorPhpDoc($node)) {
-			//    $hasChanged = \true;
-			//}
 
 			if (
 				$node instanceof Name

@@ -4,6 +4,7 @@
   "prefer-stable": true,
   "minimum-stability": "dev",
   "license": "GPL-2.0-or-later",
+  "version": "1.0.0-dev",
   "config": {
     "optimize-autoloader": true
   },
