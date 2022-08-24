@@ -11,6 +11,7 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Property;
+use Rector\Core\Application\FileSystem\RemovedAndAddedFilesCollector;
 use Rector\Core\Contract\Rector\ConfigurableRectorInterface;
 use Rector\Core\Exception\ShouldNotHappenException;
 use Rector\Core\PhpParser\Node\CustomNode\FileWithoutNamespace;
@@ -26,6 +27,8 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class JoomlaLegacyToNamespacedRector extends AbstractRector implements ConfigurableRectorInterface
 {
+	private const ACCEPTABLE_CONTAINMENT_FOLDERS = ['admin', 'administrator', 'backend', 'site', 'frontend', 'api'];
+
 	/**
 	 * @var JoomlaLegacyPrefixToNamespace[]
 	 */
@@ -33,8 +36,31 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 
 	/**
 	 * @var null|string
+	 * @readonly
 	 */
 	private $newNamespace = null;
+
+	/**
+	 * @var RemovedAndAddedFilesCollector
+	 * @readonly
+	 */
+	private $removedAndAddedFilesCollector;
+
+	public function __construct(
+		RemovedAndAddedFilesCollector $removedAndAddedFilesCollector
+	)
+	{
+		$this->removedAndAddedFilesCollector = $removedAndAddedFilesCollector;
+	}
+
+	/**
+	 * @param   mixed[]  $configuration
+	 */
+	public function configure(array $configuration): void
+	{
+		Assert::allIsAOf($configuration, JoomlaLegacyPrefixToNamespace::class);
+		$this->legacyPrefixesToNamespaces = $configuration;
+	}
 
 	/**
 	 * @return array<class-string<Node>>
@@ -63,206 +89,68 @@ CODE_SAMPLE
 	}
 
 	/**
-	 * @param mixed[] $configuration
-	 */
-	public function configure(array $configuration): void
-	{
-		Assert::allIsAOf($configuration, JoomlaLegacyPrefixToNamespace::class);
-		$this->legacyPrefixesToNamespaces = $configuration;
-	}
-
-	/**
 	 * @param   FileWithoutNamespace|Namespace_  $node
 	 */
 	public function refactor(Node $node): ?Node
 	{
 		$this->newNamespace = null;
 
-		if ($node instanceof FileWithoutNamespace) {
+		if ($node instanceof FileWithoutNamespace)
+		{
 			$changedStmts = $this->refactorStmts($node->stmts, true);
 
-			if ($changedStmts === null) {
+			if ($changedStmts === null)
+			{
 				return null;
 			}
 
 			$node->stmts = $changedStmts;
 
 			// Add a new namespace?
-			if ($this->newNamespace !== null) {
+			if ($this->newNamespace !== null)
+			{
 				return new Namespace_(new Name($this->newNamespace), $changedStmts);
 			}
 		}
 
-		if ($node instanceof Namespace_) {
+		if ($node instanceof Namespace_)
+		{
 			return $this->refactorNamespace($node);
 		}
 
 		return null;
 	}
 
-	private function refactorStmts(array $stmts, bool $isNewFile = false): ?array
+	private function divineExtensionRootFolder(): ?string
 	{
-		$hasChanged = \false;
+		$path     = str_replace('\\', '/', $this->file->getFilePath());
+		$pathBits = explode('/', $path);
 
-		$this->traverseNodesWithCallable($stmts, function (Node $node) use (&$hasChanged, $isNewFile): ?Node {
-			if (
-				!$node instanceof Name
-				&& !$node instanceof Identifier
-				&& !$node instanceof Property
-				&& !$node instanceof FunctionLike
-			) {
+		for ($i = 0; $i < 3; $i++)
+		{
+			$lastPart = array_pop($pathBits);
+
+			if ($lastPart === null)
+			{
 				return null;
 			}
 
-			//if ($this->refactorPhpDoc($node)) {
-			//    $hasChanged = \true;
-			//}
+			$isComponent = substr($lastPart, 0, 4) !== 'com_';
 
-			if (
-				$node instanceof Name
-				|| $node instanceof Identifier
-			) {
-				$changedNode = $this->processNameOrIdentifier($node, $isNewFile);
+			if ($isComponent || in_array($lastPart, self::ACCEPTABLE_CONTAINMENT_FOLDERS))
+			{
+				$pathBits[] = $lastPart;
 
-				if ($changedNode instanceof Node) {
-					$hasChanged = \true;
-
-					return $changedNode;
-				}
+				break;
 			}
-
-			return null;
-		});
-
-		if ($hasChanged) {
-			return $stmts;
 		}
 
-		return null;
-	}
-
-	/**
-	 * @param \PhpParser\Node\Name|\PhpParser\Node\Identifier $node
-	 * @return Identifier|Name|null
-	 */
-	private function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
-	{
-		// no name → skip
-		if ($node->toString() === '') {
+		if (empty($pathBits))
+		{
 			return null;
 		}
 
-		foreach ($this->legacyPrefixesToNamespaces as $legacyPrefixToNamespace) {
-			$prefix = $legacyPrefixToNamespace->getNamespacePrefix();
-			$supported = [
-				$prefix . 'Controller*',
-				$prefix . 'Model*',
-				$prefix . 'View*',
-				$prefix . 'Table*'
-			];
-
-			if (!$this->isNames($node, $supported)) {
-				continue;
-			}
-
-			$excludedClasses = $legacyPrefixToNamespace->getExcludedClasses();
-
-			if ($excludedClasses !== [] && $this->isNames($node, $excludedClasses)) {
-				return null;
-			}
-
-			if ($node instanceof Name) {
-				return $this->processName($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
-			}
-
-			return $this->processIdentifier($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
-		}
-
-		return null;
-	}
-
-	private function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
-	{
-		// The class name
-		$legacyClassName = $this->getName($name);
-
-		$fqn = $this->legacyClassNameToNamespaced($legacyClassName, $prefix, $newNamespace, $isNewFile);
-
-		if ($fqn === $legacyClassName) {
-			return $name;
-		}
-
-		$name->parts = explode('\\', $fqn);
-
-		return $name;
-	}
-
-	private function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace, bool $isNewFile = false): string
-	{
-		$applicationSide = $this->getApplicationSide();
-
-		// Controller, Model and Table are pretty straightforward
-		$legacySuffixes = ['Controller', 'Model', 'Table'];
-
-		foreach ($legacySuffixes as $legacySuffix) {
-			$fullLegacyPrefix = $prefix . $legacySuffix;
-
-			if ($legacyClassName === $fullLegacyPrefix) {
-				if ($legacySuffix !== 'Controller')
-				{
-					return $legacyClassName;
-				}
-
-				// If the file already has a namespace go away. We have already refactored it.
-				if (!$isNewFile)
-				{
-					return $legacyClassName;
-				}
-
-				$legacyClassName = $fullLegacyPrefix . 'Display';
-			}
-
-			if (strpos($legacyClassName, $fullLegacyPrefix) !== 0) {
-				continue;
-			}
-
-			// Convert FooModelBar => BarModel
-			$bareName = ucfirst(strtolower(substr($legacyClassName, strlen($fullLegacyPrefix)))) . $legacySuffix;
-
-			$fqn = trim($newNamespace, '\\')
-				. '\\' . $applicationSide
-				. '\\' . $legacySuffix
-				. '\\' . $bareName;
-
-			return $fqn;
-		}
-
-		$fullLegacyPrefix = $prefix . 'View';
-
-		if (strpos($legacyClassName, $fullLegacyPrefix) !== 0) {
-			return $legacyClassName;
-		}
-
-		// The full path to the current file, normalised as a UNIX path
-		$fullPath = str_replace('\\', '/', $this->file->getFilePath());
-		// Explode the path to an array
-		$pathBits = explode('/', $fullPath);
-		// This is the filename
-		$filename = array_pop($pathBits);
-		/**
-		 * Strip the 'view.' prefix and '.php' suffix from the filename, add 'View' to it. This changes a filename
-		 * view.html.php into the HtmlView classname.
-		 */
-		$leafClassName = ucfirst(strtolower(str_replace(['view.', '.php'], ['', ''], $filename))) . 'View';
-
-		// FooViewBar => Bar\HtmlView
-		$bareName = ucfirst(strtolower(substr($legacyClassName, strlen($fullLegacyPrefix)))) . '\\' . $leafClassName;
-		$fqn = trim($newNamespace, '\\')
-			. '\\' . $applicationSide
-			. '\\View'
-			. '\\' . $bareName;
-
-		return $fqn;
+		return implode('/', $pathBits);
 	}
 
 	/**
@@ -286,11 +174,13 @@ CODE_SAMPLE
 		$parentFolder = array_pop($pathBits);
 
 		// If the parent folder starts with com_ I will get its parent instead
-		if (substr($parentFolder, 0, 4) === 'com_') {
+		if (substr($parentFolder, 0, 4) === 'com_')
+		{
 			$parentFolder = array_pop($pathBits);
 		}
 
-		switch (strtolower(trim($parentFolder))) {
+		switch (strtolower(trim($parentFolder)))
+		{
 			case 'admin':
 			case 'administrator':
 			case 'backend':
@@ -306,53 +196,278 @@ CODE_SAMPLE
 		}
 	}
 
+	private function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace, bool $isNewFile = false): string
+	{
+		$applicationSide = $this->getApplicationSide();
+
+		// Controller, Model and Table are pretty straightforward
+		$legacySuffixes = ['Controller', 'Model', 'Table'];
+
+		foreach ($legacySuffixes as $legacySuffix)
+		{
+			$fullLegacyPrefix = $prefix . $legacySuffix;
+
+			if ($legacyClassName === $fullLegacyPrefix)
+			{
+				if ($legacySuffix !== 'Controller')
+				{
+					return $legacyClassName;
+				}
+
+				// If the file already has a namespace go away. We have already refactored it.
+				if (!$isNewFile)
+				{
+					return $legacyClassName;
+				}
+
+				$legacyClassName = $fullLegacyPrefix . 'Display';
+			}
+
+			if (strpos($legacyClassName, $fullLegacyPrefix) !== 0)
+			{
+				continue;
+			}
+
+			// Convert FooModelBar => BarModel
+			$bareName = ucfirst(strtolower(substr($legacyClassName, strlen($fullLegacyPrefix)))) . $legacySuffix;
+
+			$fqn = trim($newNamespace, '\\')
+				. '\\' . $applicationSide
+				. '\\' . $legacySuffix
+				. '\\' . $bareName;
+
+			return $fqn;
+		}
+
+		$fullLegacyPrefix = $prefix . 'View';
+
+		if (strpos($legacyClassName, $fullLegacyPrefix) !== 0)
+		{
+			return $legacyClassName;
+		}
+
+		// The full path to the current file, normalised as a UNIX path
+		$fullPath = str_replace('\\', '/', $this->file->getFilePath());
+		// Explode the path to an array
+		$pathBits = explode('/', $fullPath);
+		// This is the filename
+		$filename = array_pop($pathBits);
+		/**
+		 * Strip the 'view.' prefix and '.php' suffix from the filename, add 'View' to it. This changes a filename
+		 * view.html.php into the HtmlView classname.
+		 */
+		$leafClassName = ucfirst(strtolower(str_replace(['view.', '.php'], ['', ''], $filename))) . 'View';
+
+		// FooViewBar => Bar\HtmlView
+		$bareName = ucfirst(strtolower(substr($legacyClassName, strlen($fullLegacyPrefix)))) . '\\' . $leafClassName;
+		$fqn      = trim($newNamespace, '\\')
+			. '\\' . $applicationSide
+			. '\\View'
+			. '\\' . $bareName;
+
+		return $fqn;
+	}
+
+	private function moveFile($newNamespacePrefix, $fqn)
+	{
+		// I also need to move the file
+		$thisSideRoot = $this->divineExtensionRootFolder();
+
+		if ($thisSideRoot === null)
+		{
+			return;
+		}
+
+		// Remove the common namespace prefix
+		$newNamespacePrefix = trim($newNamespacePrefix, '\\');
+		$fqn                = trim($fqn, '\\');
+
+		if (strpos($newNamespacePrefix, $fqn) !== 0)
+		{
+			// Whatever happened is massively wrong. Give up.
+			return;
+		}
+
+		$relativeName = trim(substr($fqn, strlen($newNamespacePrefix)), '\\');
+
+		$newPath = implode(
+			DIRECTORY_SEPARATOR,
+			explode('\\', $relativeName)
+		);
+
+		if ($this->file->getFilePath() === $newPath)
+		{
+			// Okay, this is already in the correct PSR-4 folder. Bye-bye!
+			return;
+		}
+
+		// Move the file
+		$this->removedAndAddedFilesCollector->addMovedFile($this->file, $newPath);
+	}
+
 	private function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix, bool $isNewFile = false): ?Identifier
 	{
 		$parentNode = $identifier->getAttribute(AttributeKey::PARENT_NODE);
 
-		if (!$parentNode instanceof Class_) {
+		if (!$parentNode instanceof Class_)
+		{
 			return null;
 		}
 
 		$name = $this->getName($identifier);
 
-		if ($name === null) {
+		if ($name === null)
+		{
 			return null;
 		}
 
-		$newNamespace = '';
+		$newNamespace    = '';
 		$lastNewNamePart = $name;
-		$fqn = $this->legacyClassNameToNamespaced($name, $prefix, $newNamespacePrefix, $isNewFile);
+		$fqn             = $this->legacyClassNameToNamespaced($name, $prefix, $newNamespacePrefix, $isNewFile);
 
-		if ($fqn === $name) {
+		if ($fqn === $name)
+		{
 			return $identifier;
 		}
 
 		$bits = explode('\\', $fqn);
 
-		if (count($bits) > 1) {
+		if (count($bits) > 1)
+		{
 			$lastNewNamePart = array_pop($bits);
-			$newNamespace = implode('\\', $bits);
+			$newNamespace    = implode('\\', $bits);
 		}
 
-		if ($this->newNamespace !== null && $this->newNamespace !== $newNamespace) {
+		if ($this->newNamespace !== null && $this->newNamespace !== $newNamespace)
+		{
 			throw new ShouldNotHappenException('There cannot be 2 different namespaces in one file');
 		}
 
 		$this->newNamespace = $newNamespace;
-		$identifier->name = $lastNewNamePart;
+		$identifier->name   = $lastNewNamePart;
+
+		$this->moveFile($newNamespacePrefix, $fqn);
 
 		return $identifier;
+	}
+
+	private function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
+	{
+		// The class name
+		$legacyClassName = $this->getName($name);
+
+		$fqn = $this->legacyClassNameToNamespaced($legacyClassName, $prefix, $newNamespace, $isNewFile);
+
+		if ($fqn === $legacyClassName)
+		{
+			return $name;
+		}
+
+		$name->parts = explode('\\', $fqn);
+
+		return $name;
+	}
+
+	/**
+	 * @param   \PhpParser\Node\Name|\PhpParser\Node\Identifier  $node
+	 *
+	 * @return Identifier|Name|null
+	 */
+	private function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
+	{
+		// no name → skip
+		if ($node->toString() === '')
+		{
+			return null;
+		}
+
+		foreach ($this->legacyPrefixesToNamespaces as $legacyPrefixToNamespace)
+		{
+			$prefix    = $legacyPrefixToNamespace->getNamespacePrefix();
+			$supported = [
+				$prefix . 'Controller*',
+				$prefix . 'Model*',
+				$prefix . 'View*',
+				$prefix . 'Table*',
+			];
+
+			if (!$this->isNames($node, $supported))
+			{
+				continue;
+			}
+
+			$excludedClasses = $legacyPrefixToNamespace->getExcludedClasses();
+
+			if ($excludedClasses !== [] && $this->isNames($node, $excludedClasses))
+			{
+				return null;
+			}
+
+			if ($node instanceof Name)
+			{
+				return $this->processName($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
+			}
+
+			return $this->processIdentifier($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
+		}
+
+		return null;
 	}
 
 	private function refactorNamespace(Namespace_ $namespace): ?Namespace_
 	{
 		$changedStmts = $this->refactorStmts($namespace->stmts);
 
-		if ($changedStmts === null) {
+		if ($changedStmts === null)
+		{
 			return null;
 		}
 
 		return $namespace;
+	}
+
+	private function refactorStmts(array $stmts, bool $isNewFile = false): ?array
+	{
+		$hasChanged = \false;
+
+		$this->traverseNodesWithCallable($stmts, function (Node $node) use (&$hasChanged, $isNewFile): ?Node {
+			if (
+				!$node instanceof Name
+				&& !$node instanceof Identifier
+				&& !$node instanceof Property
+				&& !$node instanceof FunctionLike
+			)
+			{
+				return null;
+			}
+
+			//if ($this->refactorPhpDoc($node)) {
+			//    $hasChanged = \true;
+			//}
+
+			if (
+				$node instanceof Name
+				|| $node instanceof Identifier
+			)
+			{
+				$changedNode = $this->processNameOrIdentifier($node, $isNewFile);
+
+				if ($changedNode instanceof Node)
+				{
+					$hasChanged = \true;
+
+					return $changedNode;
+				}
+			}
+
+			return null;
+		});
+
+		if ($hasChanged)
+		{
+			return $stmts;
+		}
+
+		return null;
 	}
 }
