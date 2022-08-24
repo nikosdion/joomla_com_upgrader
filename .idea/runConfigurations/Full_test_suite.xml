@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Full test suite" type="PHPUnitRunConfigurationType" factoryName="PHPUnit">
+    <CommandLine>
+      <PhpTestInterpreterSettings>
+        <option name="interpreterName" value="PHP 8.1 (No Debug)" />
+      </PhpTestInterpreterSettings>
+    </CommandLine>
+    <TestRunner directory="$PROJECT_DIR$/rules-tests" />
+    <method v="2" />
+  </configuration>
+</component>
