@@ -231,9 +231,27 @@ CODE_SAMPLE
 		// This is the filename
 		array_pop($pathBits);
 		// Remove the immediate folder we are in, I can infer it from the classname, duh
-		array_pop($pathBits);
+		$temp = array_pop($pathBits);
+		// But, wait! What if it's the legacy display controller?! In this case I need to put that last folder back!
+		if (in_array($temp, self::ACCEPTABLE_CONTAINMENT_FOLDERS) || substr($temp, 0, 4) === 'com_')
+		{
+			$pathBits[] = $temp;
+		}
+		$isTmpl = $temp === 'tmpl';
 		// Get the parent folder
 		$parentFolder = array_pop($pathBits);
+
+		// If the last folder we were in was tmpl then $parentFolder is the view name. Pop two.
+		if ($isTmpl)
+		{
+			$parentFolder = array_pop($pathBits);
+			$parentFolder = array_pop($pathBits);
+		}
+		// If the $parentFolder is views we need to pop one
+		elseif ($parentFolder === 'views')
+		{
+			$parentFolder = array_pop($pathBits);
+		}
 
 		// If the parent folder starts with com_ I will get its parent instead
 		if (substr($parentFolder, 0, 4) === 'com_')

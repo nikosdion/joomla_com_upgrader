@@ -10,10 +10,10 @@ declare(strict_types=1);
 
 namespace Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector;
 
-use Rector\Core\Exception\ShouldNotHappenException;
 use Rector\FileSystemRector\ValueObject\AddedFileWithContent;
 use Rector\Testing\PHPUnit\AbstractRectorTestCase;
 use RectorPrefix202208\Symplify\EasyTesting\StaticFixtureSplitter;
+use RectorPrefix202208\Symplify\SmartFileSystem\SmartFileInfo;
 
 /**
  * Unit Tests for the JoomlaLegacyToNamespacedRector rule.
@@ -23,6 +23,15 @@ use RectorPrefix202208\Symplify\EasyTesting\StaticFixtureSplitter;
 final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
 {
 	private const RENAME_MAP = [
+		'admin/controller.php'              => 'admin/src/Controller/DisplayController.php',
+		'admin/controllers/example.php'     => 'admin/src/Controller/ExampleController.php',
+		'admin/controllers/foobar.php'      => 'admin/src/Controller/FoobarController.php',
+		'admin/models/example.php'          => 'admin/src/Model/ExampleModel.php',
+		'admin/models/foobar.php'           => 'admin/src/Model/FoobarModel.php',
+		'admin/views/example/view.html.php' => 'admin/src/View/Example/HtmlView.php',
+		'admin/views/example/view.json.php' => 'admin/src/View/Example/JsonView.php',
+		'admin/views/foobar/view.html.php'  => 'admin/src/View/Foobar/HtmlView.php',
+
 		'site/controller.php'              => 'site/src/Controller/DisplayController.php',
 		'site/controllers/example.php'     => 'site/src/Controller/ExampleController.php',
 		'site/controllers/foobar.php'      => 'site/src/Controller/FoobarController.php',
@@ -50,6 +59,24 @@ final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
 	{
 		// Tells Rector to create test cases from the Fixture files. Don't touch it!
 		return $this->yieldFilesFromDirectory(__DIR__ . '/Fixture');
+	}
+
+	/**
+	 * @return \Iterator<\Symplify\SmartFileSystem\SmartFileInfo>
+	 */
+	public function provideDataMini(): array
+	{
+		return [
+			[new SmartFileInfo(__DIR__ . '/Fixture/admin/controller.php.inc')]
+		];
+	}
+
+	/**
+	 * @dataProvider provideDataMini()
+	 */
+	public function testOneFileForDebug(\Symplify\SmartFileSystem\SmartFileInfo $fileInfo): void
+	{
+		$this->testRefactorNamespace($fileInfo);
 	}
 
 	/**
