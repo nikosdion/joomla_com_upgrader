@@ -24,7 +24,7 @@ Do you have a Joomla extensions development business? Are you a web agency using
 
 Sponsorships will help me spend more time working on this tool, the Joomla extension developer's documentation and core Joomla code.
 
-If you're interested hit me up at [https://www.dionysopoulos.me/contact-me.html?view=item](the Contact Me page)! You'll get my gratitude and your logo on this page.
+If you're interested hit me up at [the Contact Me page](https://www.dionysopoulos.me/contact-me.html?view=item)! You'll get my gratitude and your logo on this page.
 
 ## Requirements
 
