@@ -194,7 +194,7 @@ CODE_SAMPLE
 				return null;
 			}
 
-			$isComponent = substr($lastPart, 0, 4) !== 'com_';
+			$isComponent = substr($lastPart, 0, 4) === 'com_';
 
 			if ($isComponent || in_array($lastPart, self::ACCEPTABLE_CONTAINMENT_FOLDERS))
 			{
@@ -366,7 +366,7 @@ CODE_SAMPLE
 		$newNamespacePrefix = trim($newNamespacePrefix, '\\');
 		$fqn                = trim($fqn, '\\');
 
-		if (strpos($newNamespacePrefix, $fqn) !== 0)
+		if (strpos($fqn, $newNamespacePrefix) !== 0)
 		{
 			// Whatever happened is massively wrong. Give up.
 			return;
@@ -394,7 +394,7 @@ CODE_SAMPLE
 		$newPath = $thisSideRoot . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . implode(
 				DIRECTORY_SEPARATOR,
 				$fqnParts
-			);
+			) . '.php';
 
 		// Make sure we actually DO need to rename the file.
 		if ($this->file->getFilePath() === $newPath)
