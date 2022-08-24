@@ -1,4 +1,11 @@
 <?php
+/**
+ * Joomla 3 Component Upgrade Rectors
+ *
+ * @copyright  2022 Nicholas K. Dionysopoulos
+ * @license    GNU General Public License version 2 or later; see LICENSE.txt
+ */
+
 declare (strict_types=1);
 
 namespace RectorPrefix202208;

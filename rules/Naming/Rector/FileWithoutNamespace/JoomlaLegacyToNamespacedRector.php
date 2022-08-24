@@ -1,4 +1,10 @@
 <?php
+/**
+ * Joomla 3 Component Upgrade Rectors
+ *
+ * @copyright  2022 Nicholas K. Dionysopoulos
+ * @license    GNU General Public License version 2 or later; see LICENSE.txt
+ */
 
 declare (strict_types=1);
 
@@ -23,6 +29,8 @@ use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 
 /**
+ * A Rector rule to namespace legacy Joomla 3 MVC classes into Joomla 4+ MVC namespaced classes
+ *
  * @see \Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector\JoomlaLegacyToNamespacedRectorTest
  */
 final class JoomlaLegacyToNamespacedRector extends AbstractRector implements ConfigurableRectorInterface

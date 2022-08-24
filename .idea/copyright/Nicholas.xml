@@ -1,0 +1,8 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="allowReplaceRegexp" value="@copyright" />
+    <option name="keyword" value="@copyright" />
+    <option name="notice" value="Joomla 3 Component Upgrade Rectors&#10;&#10;@copyright  &amp;#36;originalComment.match(&quot;Copyright\s+(\d+)&quot;, 1, &quot;-&quot;, &quot;&amp;#36;today.year&quot;)&amp;#36;today.year Nicholas K. Dionysopoulos &#10;@license    GNU General Public License version 2 or later; see LICENSE.txt" />
+    <option name="myName" value="Nicholas" />
+  </copyright>
+</component>
