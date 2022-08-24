@@ -32,6 +32,11 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	private $legacyPrefixesToNamespaces = [];
 
 	/**
+	 * @var null|string
+	 */
+	private $newNamespace = null;
+
+	/**
 	 * @return array<class-string<Node>>
 	 */
 	public function getNodeTypes(): array
@@ -74,7 +79,7 @@ CODE_SAMPLE
 		$this->newNamespace = null;
 
 		if ($node instanceof FileWithoutNamespace) {
-			$changedStmts = $this->refactorStmts($node->stmts);
+			$changedStmts = $this->refactorStmts($node->stmts, true);
 
 			if ($changedStmts === null) {
 				return null;
@@ -95,11 +100,11 @@ CODE_SAMPLE
 		return null;
 	}
 
-	private function refactorStmts(array $stmts): ?array
+	private function refactorStmts(array $stmts, bool $isNewFile = false): ?array
 	{
 		$hasChanged = \false;
 
-		$this->traverseNodesWithCallable($stmts, function (Node $node) use (&$hasChanged): ?Node {
+		$this->traverseNodesWithCallable($stmts, function (Node $node) use (&$hasChanged, $isNewFile): ?Node {
 			if (
 				!$node instanceof Name
 				&& !$node instanceof Identifier
@@ -117,7 +122,7 @@ CODE_SAMPLE
 				$node instanceof Name
 				|| $node instanceof Identifier
 			) {
-				$changedNode = $this->processNameOrIdentifier($node);
+				$changedNode = $this->processNameOrIdentifier($node, $isNewFile);
 
 				if ($changedNode instanceof Node) {
 					$hasChanged = \true;
@@ -140,7 +145,7 @@ CODE_SAMPLE
 	 * @param \PhpParser\Node\Name|\PhpParser\Node\Identifier $node
 	 * @return Identifier|Name|null
 	 */
-	private function processNameOrIdentifier($node): ?Node
+	private function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
 	{
 		// no name → skip
 		if ($node->toString() === '') {
@@ -167,21 +172,21 @@ CODE_SAMPLE
 			}
 
 			if ($node instanceof Name) {
-				return $this->processName($node, $prefix, $legacyPrefixToNamespace->getNewNamespace());
+				return $this->processName($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
 			}
 
-			return $this->processIdentifier($node, $prefix, $legacyPrefixToNamespace->getNewNamespace());
+			return $this->processIdentifier($node, $prefix, $legacyPrefixToNamespace->getNewNamespace(), $isNewFile);
 		}
 
 		return null;
 	}
 
-	private function processName(Name $name, string $prefix, string $newNamespace): Name
+	private function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
 	{
 		// The class name
 		$legacyClassName = $this->getName($name);
 
-		$fqn = $this->legacyClassNameToNamespaced($legacyClassName, $prefix, $newNamespace);
+		$fqn = $this->legacyClassNameToNamespaced($legacyClassName, $prefix, $newNamespace, $isNewFile);
 
 		if ($fqn === $legacyClassName) {
 			return $name;
@@ -192,7 +197,7 @@ CODE_SAMPLE
 		return $name;
 	}
 
-	private function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace): string
+	private function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace, bool $isNewFile = false): string
 	{
 		$applicationSide = $this->getApplicationSide();
 
@@ -203,7 +208,18 @@ CODE_SAMPLE
 			$fullLegacyPrefix = $prefix . $legacySuffix;
 
 			if ($legacyClassName === $fullLegacyPrefix) {
-				return $legacyClassName;
+				if ($legacySuffix !== 'Controller')
+				{
+					return $legacyClassName;
+				}
+
+				// If the file already has a namespace go away. We have already refactored it.
+				if (!$isNewFile)
+				{
+					return $legacyClassName;
+				}
+
+				$legacyClassName = $fullLegacyPrefix . 'Display';
 			}
 
 			if (strpos($legacyClassName, $fullLegacyPrefix) !== 0) {
@@ -290,7 +306,7 @@ CODE_SAMPLE
 		}
 	}
 
-	private function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix): ?Identifier
+	private function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix, bool $isNewFile = false): ?Identifier
 	{
 		$parentNode = $identifier->getAttribute(AttributeKey::PARENT_NODE);
 
@@ -306,7 +322,7 @@ CODE_SAMPLE
 
 		$newNamespace = '';
 		$lastNewNamePart = $name;
-		$fqn = $this->legacyClassNameToNamespaced($name, $prefix, $newNamespacePrefix);
+		$fqn = $this->legacyClassNameToNamespaced($name, $prefix, $newNamespacePrefix, $isNewFile);
 
 		if ($fqn === $name) {
 			return $identifier;
