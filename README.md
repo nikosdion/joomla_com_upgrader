@@ -78,6 +78,8 @@ Update your `composer.json` file with the following:
 
 ```json
 {
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "repositories": [
     {
       "name": "nikosdion/joomla_typehints",
