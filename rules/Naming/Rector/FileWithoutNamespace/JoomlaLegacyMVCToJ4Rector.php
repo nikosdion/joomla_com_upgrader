@@ -32,9 +32,9 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  * A Rector rule to namespace legacy Joomla 3 MVC classes into Joomla 4+ MVC namespaced classes
  *
  * @since  1.0.0
- * @see    \Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector\JoomlaLegacyToNamespacedRectorTest
+ * @see    \Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector\JoomlaLegacyToNamespacedRectorTest
  */
-final class JoomlaLegacyToNamespacedRector extends AbstractRector implements ConfigurableRectorInterface
+class JoomlaLegacyMVCToJ4Rector extends AbstractRector implements ConfigurableRectorInterface
 {
 	use JoomlaNamespaceHandlingTrait;
 
@@ -44,7 +44,7 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	 * @since 1.0.0
 	 * @var   JoomlaLegacyPrefixToNamespace[]
 	 */
-	private $legacyPrefixesToNamespaces = [];
+	protected $legacyPrefixesToNamespaces = [];
 
 	/**
 	 * The new namespace being applied to the current class file being refactored.
@@ -53,7 +53,7 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	 * @var   null|string
 	 * @readonly
 	 */
-	private $newNamespace = null;
+	protected $newNamespace = null;
 
 	/**
 	 * Rector utility object which collects the filename changes
@@ -62,7 +62,7 @@ final class JoomlaLegacyToNamespacedRector extends AbstractRector implements Con
 	 * @var   RemovedAndAddedFilesCollector
 	 * @readonly
 	 */
-	private $removedAndAddedFilesCollector;
+	protected $removedAndAddedFilesCollector;
 
 	/**
 	 * Public constructor.
@@ -188,7 +188,7 @@ CODE_SAMPLE
 	 * @throws  ShouldNotHappenException  A file had two classes in it yielding different namespaces. Don't do that!
 	 * @since   1.0.0
 	 */
-	private function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix, bool $isNewFile = false): ?Identifier
+	protected function processIdentifier(Identifier $identifier, string $prefix, string $newNamespacePrefix, bool $isNewFile = false): ?Identifier
 	{
 		$parentNode = $identifier->getAttribute(AttributeKey::PARENT_NODE);
 
@@ -245,7 +245,7 @@ CODE_SAMPLE
 	 * @return  Name  The refactored Node. Original node if nothing was refactored.
 	 * @since   1.0.0
 	 */
-	private function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
+	protected function processName(Name $name, string $prefix, string $newNamespace, bool $isNewFile = false): Name
 	{
 		// The class name
 		$legacyClassName = $this->getName($name);
@@ -270,7 +270,7 @@ CODE_SAMPLE
 	 * @return  Identifier|Name|null  The refactored node; NULL if no refactoring was necessary / possible.
 	 * @since   1.0.0
 	 */
-	private function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
+	protected function processNameOrIdentifier($node, bool $isNewFile = false): ?Node
 	{
 		// no name → skip
 		if ($node->toString() === '')
@@ -319,7 +319,7 @@ CODE_SAMPLE
 	 * @return  Namespace_|null  The refactored node; NULL if nothing is refactored
 	 * @since   1.0.0
 	 */
-	private function refactorNamespace(Namespace_ $namespace): ?Namespace_
+	protected function refactorNamespace(Namespace_ $namespace): ?Namespace_
 	{
 		$changedStmts = $this->refactorStmts($namespace->stmts);
 
@@ -340,7 +340,7 @@ CODE_SAMPLE
 	 * @return  array|null  The array of refactored statements. NULL if was nothing to refactor.
 	 * @since   1.0.0
 	 */
-	private function refactorStmts(array $stmts, bool $isNewFile = false): ?array
+	protected function refactorStmts(array $stmts, bool $isNewFile = false): ?array
 	{
 		$hasChanged = \false;
 

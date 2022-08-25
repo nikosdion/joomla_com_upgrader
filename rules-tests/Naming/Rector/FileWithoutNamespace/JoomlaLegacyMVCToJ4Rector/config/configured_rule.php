@@ -12,11 +12,11 @@ namespace RectorPrefix202208;
 
 use Rector\Config\RectorConfig;
 use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
-use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
 
 return static function (RectorConfig $rectorConfig) : void {
 	$rectorConfig->ruleWithConfiguration(
-		JoomlaLegacyToNamespacedRector::class,
+		JoomlaLegacyMVCToJ4Rector::class,
 		[
 			new JoomlaLegacyPrefixToNamespace('Example', '\\Acme\\Example', [
 				'Example',

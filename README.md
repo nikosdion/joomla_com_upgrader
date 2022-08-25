@@ -108,8 +108,8 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
-use Supercalifragilisticexpialidocious\Config\JoomlaLegacyPrefixToNamespace;
-use Supercalifragilisticexpialidocious\Rector\ConvertJoomlaMVCNamespaces;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
+use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -130,11 +130,14 @@ return static function (RectorConfig $rectorConfig): void {
             SetList::EARLY_RETURN,
         ]);
 
-    // Auto-refactor the Joomla MVC classes
-    $rectorConfig->ruleWithConfiguration(ConvertJoomlaMVCNamespaces::class, [
+    // Configure the namespace mappings
+    $joomlaNamespaceMaps = [
         new JoomlaLegacyPrefixToNamespace('Helloworld', 'Acme\HelloWorld', []),
         new JoomlaLegacyPrefixToNamespace('HelloWorld', 'Acme\HelloWorld', []),
-    ]);
+    ];
+
+    // Auto-refactor the Joomla MVC classes
+    $rectorConfig->ruleWithConfiguration(JoomlaLegacyMVCToJ4Rector::class, $joomlaNamespaceMaps);
 
     // Replace Fully Qualified Names (FQN) of classes with `use` imports at the top of the file.
     $rectorConfig->importNames();
@@ -145,13 +148,16 @@ return static function (RectorConfig $rectorConfig): void {
 
 The lines you need to change are:
 ```php
-    // Auto-refactor the Joomla MVC classes
-    $rectorConfig->ruleWithConfiguration(ConvertJoomlaMVCNamespaces::class, [
+    $joomlaNamespaceMaps = [
         new JoomlaLegacyPrefixToNamespace('Helloworld', 'Acme\HelloWorld', []),
         new JoomlaLegacyPrefixToNamespace('HelloWorld', 'Acme\HelloWorld', []),
-    ]);
+    ];
 ```
 where `HelloWorld` is the name of your component without the `com_` prefix and `Acme\HelloWorld` is the namespace prefix you want to use for your component. It is recommended to use the convention `CompanyName\ComponentNameWithoutCom` or `CompanyName\Component\ComponentNameWithoutCom` for your namespace prefix.
+
+**CAUTION!** Note that I added two lines here with the legacy Joomla 3 namespace being `Helloworld` in one and `HelloWorld` in another. That's because in Joomla 3 the case of the prefix of your component does not matter. `Helloworld`, `HelloWorld` and `HELLOWORLD` would work just fine. The code refactoring rules are, however, case–sensitive. As a result you need to add as many lines as you have different cases in your component.
+
+The third argument, the empty array `[]`, is a list of class names which begin with the old prefix that you do not want to namespace. I can't think of a reason why you want to do that but I can neither claim I can think of any use case. So I added that option _just in case_ you need it.
 
 Now you can run Rector to do _a hell of a lot_ of the refactoring necessary to convert your component to Joomla 4 MVC:
 

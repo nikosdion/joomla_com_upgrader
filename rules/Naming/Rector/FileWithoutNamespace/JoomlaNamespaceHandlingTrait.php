@@ -139,7 +139,7 @@ trait JoomlaNamespaceHandlingTrait
 	 * Convert a legacy Joomla 3 class name to its Joomla 4 namespaced equivalent.
 	 *
 	 * @param   string  $legacyClassName  The legacy class name, e.g. ExampleControllerFoobar
-	 * @param   string  $prefix           The common prefix of the legacy Joomla 3 classes, e.g. Example for
+	 * @param   string  $componentPrefix  The common prefix of the legacy Joomla 3 classes, e.g. Example for
 	 *                                    com_example
 	 * @param   string  $newNamespace     The common namespace prefix for the Joomla 4 component
 	 * @param   bool    $isNewFile        Is this a file without a namespace already defined?
@@ -148,20 +148,20 @@ trait JoomlaNamespaceHandlingTrait
 	 *                  \Acme\Example\Administrator\Controller\ExampleController
 	 * @since   1.0.0
 	 */
-	protected function legacyClassNameToNamespaced(string $legacyClassName, string $prefix, string $newNamespace, bool $isNewFile = false): string
+	protected function legacyClassNameToNamespaced(string $legacyClassName, string $componentPrefix, string $newNamespace, bool $isNewFile = false): string
 	{
 		$applicationSide = $this->getApplicationSide();
 
 		// Controller, Model and Table are pretty straightforward
-		$legacySuffixes = ['Controller', 'Model', 'Table'];
+		$legacySuffixes = ['Controller', 'Model', 'Table', 'Helper'];
 
 		foreach ($legacySuffixes as $legacySuffix)
 		{
-			$fullLegacyPrefix = $prefix . $legacySuffix;
+			$fullLegacyPrefix = $componentPrefix . $legacySuffix;
 
 			if ($legacyClassName === $fullLegacyPrefix)
 			{
-				if ($legacySuffix !== 'Controller')
+				if (!in_array($legacySuffix, ['Controller', 'Helper']))
 				{
 					return $legacyClassName;
 				}
@@ -172,7 +172,28 @@ trait JoomlaNamespaceHandlingTrait
 					return $legacyClassName;
 				}
 
-				$legacyClassName = $fullLegacyPrefix . 'Display';
+				switch ($legacySuffix)
+				{
+					case 'Controller':
+						$legacyClassName = $fullLegacyPrefix . 'Display';
+						break;
+
+					case 'Helper':
+						$legacyClassName = $fullLegacyPrefix . $componentPrefix;
+						break;
+				}
+			}
+			/**
+			 * Special handling for regular Helper classes.
+			 *
+			 * Naming pattern for com_example: ExampleSomethingHelper
+			 */
+			elseif ($legacySuffix === 'Helper' && substr($legacyClassName, -6) === 'Helper')
+			{
+				// Rewrite ExampleSomethingHelper to ExampleHelperSomething for our code below to work.
+				$plain = substr($legacyClassName, strlen($componentPrefix));
+				$plain = substr($plain, 0, -strlen($legacySuffix));
+				$legacyClassName = $componentPrefix . $legacySuffix . $plain;
 			}
 
 			if (strpos($legacyClassName, $fullLegacyPrefix) !== 0)
@@ -191,7 +212,10 @@ trait JoomlaNamespaceHandlingTrait
 			return $fqn;
 		}
 
-		$fullLegacyPrefix = $prefix . 'View';
+		/**
+		 * Special handling for View classes
+		 */
+		$fullLegacyPrefix = $componentPrefix . 'View';
 
 		if (strpos($legacyClassName, $fullLegacyPrefix) !== 0)
 		{

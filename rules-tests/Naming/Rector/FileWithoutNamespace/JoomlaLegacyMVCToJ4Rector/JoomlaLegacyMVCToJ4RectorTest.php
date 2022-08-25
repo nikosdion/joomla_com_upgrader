@@ -8,7 +8,7 @@
 
 declare(strict_types=1);
 
-namespace Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyToNamespacedRector;
+namespace Rector\Tests\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
 
 use Rector\FileSystemRector\ValueObject\AddedFileWithContent;
 use Rector\Testing\PHPUnit\AbstractRectorTestCase;
@@ -16,11 +16,11 @@ use RectorPrefix202208\Symplify\EasyTesting\StaticFixtureSplitter;
 use RectorPrefix202208\Symplify\SmartFileSystem\SmartFileInfo;
 
 /**
- * Unit Tests for the JoomlaLegacyToNamespacedRector rule.
+ * Unit Tests for the JoomlaLegacyMVCToJ4Rector rule.
  *
  * @since  1.0.0
  */
-final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
+final class JoomlaLegacyMVCToJ4RectorTest extends AbstractRectorTestCase
 {
 	private const RENAME_MAP = [
 		'admin/controller.php'              => 'admin/src/Controller/DisplayController.php',
