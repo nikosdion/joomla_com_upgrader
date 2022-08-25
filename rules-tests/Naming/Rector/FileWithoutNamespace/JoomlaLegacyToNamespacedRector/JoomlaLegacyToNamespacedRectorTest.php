@@ -28,6 +28,8 @@ final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
 		'admin/controllers/foobar.php'      => 'admin/src/Controller/FoobarController.php',
 		'admin/models/example.php'          => 'admin/src/Model/ExampleModel.php',
 		'admin/models/foobar.php'           => 'admin/src/Model/FoobarModel.php',
+		'admin/tables/example.php'          => 'admin/src/Table/ExampleTable.php',
+		'admin/tables/foobar.php'           => 'admin/src/Table/FoobarTable.php',
 		'admin/views/example/view.html.php' => 'admin/src/View/Example/HtmlView.php',
 		'admin/views/example/view.json.php' => 'admin/src/View/Example/JsonView.php',
 		'admin/views/foobar/view.html.php'  => 'admin/src/View/Foobar/HtmlView.php',
@@ -67,7 +69,7 @@ final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
 	public function provideDataMini(): array
 	{
 		return [
-			[new SmartFileInfo(__DIR__ . '/Fixture/admin/controller.php.inc')]
+			[new SmartFileInfo(__DIR__ . '/Fixture/admin/tables/example.php.inc')]
 		];
 	}
 
@@ -96,7 +98,12 @@ final class JoomlaLegacyToNamespacedRectorTest extends AbstractRectorTestCase
 
 		if (empty($newRelative))
 		{
-			return;
+			$this->markTestIncomplete(
+				sprintf(
+					'You have not set up the expected target path for ‘%s’ in RENAME_MAP',
+					$relative
+				)
+			);
 		}
 
 		$newAbsolute = realpath($this->getFixtureTempDirectory()) . '/' . $newRelative;
