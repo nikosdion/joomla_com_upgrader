@@ -23,7 +23,7 @@ trait JoomlaNamespaceHandlingTrait
 	 */
 	protected function divineExtensionRootFolder(): ?string
 	{
-		$path     = str_replace('\\', '/', $this->getFile()->getFilePath());
+		$path     = str_replace('\\', '/', $this->file->getFilePath());
 		$pathBits = explode('/', $path);
 
 		for ($i = 0; $i < 3; $i++)
@@ -66,7 +66,7 @@ trait JoomlaNamespaceHandlingTrait
 		 * frontend, api and decide which namespace suffix to add.
 		 */
 		// The full path to the current file, normalised as a UNIX path
-		$fullPath = str_replace('\\', '/', $this->getFile()->getFilePath());
+		$fullPath = str_replace('\\', '/', $this->file->getFilePath());
 		// Explode the path to an array
 		$pathBits = explode('/', $fullPath);
 		// This is the filename
@@ -223,7 +223,7 @@ trait JoomlaNamespaceHandlingTrait
 		}
 
 		// The full path to the current file, normalised as a UNIX path
-		$fullPath = str_replace('\\', '/', $this->getFile()->getFilePath());
+		$fullPath = str_replace('\\', '/', $this->file->getFilePath());
 		// Explode the path to an array
 		$pathBits = explode('/', $fullPath);
 		// This is the filename
@@ -298,7 +298,7 @@ trait JoomlaNamespaceHandlingTrait
 			) . '.php';
 
 		// Make sure we actually DO need to rename the file.
-		if ($this->getFile()->getFilePath() === $newPath)
+		if ($this->file->getFilePath() === $newPath)
 		{
 			// Okay, this is already in the correct PSR-4 folder. Bye-bye!
 			return;

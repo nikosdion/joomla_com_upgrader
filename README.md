@@ -113,10 +113,10 @@ declare(strict_types=1);
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
-use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
-use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHelpersToJ4Rector;
-use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHelpersToJ4Rector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
+use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -130,8 +130,8 @@ return static function (RectorConfig $rectorConfig): void {
     
     $rectorConfig->skip([
         // These are our auto-generated renamed class maps for the second pass 
-        __DIR__ . '_classmap.php'
-        __DIR__ . '_classmap.json'
+        __DIR__ . '_classmap.php',
+        __DIR__ . '_classmap.json',
     ]);
     
     // Required to autowire the custom services used by our Rector rules

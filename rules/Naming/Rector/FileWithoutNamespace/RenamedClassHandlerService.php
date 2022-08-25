@@ -105,7 +105,7 @@ final class RenamedClassHandlerService
 		}
 
 		$contents  = file_get_contents($filePath);
-		$this->map = @json_decode($contents) ?? [
+		$this->map = @json_decode($contents, true) ?? [
 			'site'  => [],
 			'admin' => [],
 		];
