@@ -46,9 +46,10 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 
 **What it does**
 * Namespace all of your MVC (Model, Controller, View and Table) classes and place them into the appropriate directories.
+* Refactor and namespace helper classes.
 
 **What I would like to add**
-* Refactor and namespace helper classes.
+* Refactor and namespace HTML helper classes into a services.
 * Refactor and namespace custom form field classes.
 * Refactor and namespace custom form rule classes.
 * Refactor static getInstance calls to the base model and table classes.
@@ -64,7 +65,6 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 **What it CAN NOT and WILL NOT do**
 * Change typehints in PHP docblocks. While possible in Rector it's too convoluted and time–consuming. Sorry.
 * Remove your old entry point file, possibly converting it to a custom Dispatcher.
-* Convert custom HTML helpers into a custom HTML service for your component.
 * Refactor static getInstance calls to _descendants of_ the base model and table classes.
 
 ## How to use
