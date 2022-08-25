@@ -13,15 +13,25 @@ namespace RectorPrefix202208;
 use Rector\Config\RectorConfig;
 use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
+use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 
-return static function (RectorConfig $rectorConfig) : void {
+return static function (RectorConfig $rectorConfig): void {
+	$services = $rectorConfig
+		->services()
+		->defaults()
+		->autowire()
+		->autoconfigure();
+
+	$services->set(RenamedClassHandlerService::class)
+	         ->arg('$directory', realpath(__DIR__ . '/../../../../../../'));
+
 	$rectorConfig->ruleWithConfiguration(
 		JoomlaLegacyMVCToJ4Rector::class,
 		[
 			new JoomlaLegacyPrefixToNamespace('Example', '\\Acme\\Example', [
 				'Example',
 				'ExampleFoobar',
-			])
+			]),
 		]
 	);
 };

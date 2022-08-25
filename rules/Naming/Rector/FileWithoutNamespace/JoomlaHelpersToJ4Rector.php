@@ -14,7 +14,6 @@ use PhpParser\Node;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
 use Rector\Core\Contract\Rector\ConfigurableRectorInterface;
-use Rector\Core\Exception\ShouldNotHappenException;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 
@@ -56,19 +55,6 @@ CODE_SAMPLE
 			),
 		]);
 	}
-
-	/**
-	 * Processes an Identifier node
-	 *
-	 * @param   Identifier  $identifier          The node to process
-	 * @param   string      $prefix              The legacy Joomla 3 prefix, e.g. Example
-	 * @param   string      $newNamespacePrefix  The Joomla 4 common namespace prefix e.g. \Acme\Example
-	 * @param   bool        $isNewFile           Is this a file without a namespace already defined?
-	 *
-	 * @return  Identifier|null  The refactored identified; null if no refactoring is necessary / possible
-	 * @throws  ShouldNotHappenException  A file had two classes in it yielding different namespaces. Don't do that!
-	 * @since   1.0.0
-	 */
 
 	/**
 	 * Process a Name or Identifier node but only if necessary!

@@ -23,9 +23,11 @@ use RectorPrefix202208\Symplify\SmartFileSystem\SmartFileInfo;
 final class JoomlaHelpersToJ4RectorTest extends AbstractRectorTestCase
 {
 	private const RENAME_MAP = [
-		'admin/helpers/example.php'         => 'admin/src/Helper/ExampleHelper.php',
+		'admin/helpers/example.php'      => 'admin/src/Helper/ExampleHelper.php',
+		'admin/helpers/foobar.php'       => 'admin/src/Helper/FoobarHelper.php',
+		'admin/helpers/associations.php' => 'admin/src/Helper/AssociationsHelper.php',
 
-		'site/helpers/example.php'          => 'site/src/Helper/ExampleHelper.php',
+		'site/helpers/example.php' => 'site/src/Helper/ExampleHelper.php',
 	];
 
 	public function provideConfigFilePath(): string
@@ -53,7 +55,7 @@ final class JoomlaHelpersToJ4RectorTest extends AbstractRectorTestCase
 	public function provideDataMini(): array
 	{
 		return [
-			[new SmartFileInfo(__DIR__ . '/Fixture/admin/helpers/foobar.php.inc')]
+			[new SmartFileInfo(__DIR__ . '/Fixture/admin/helpers/foobar.php.inc')],
 		];
 	}
 

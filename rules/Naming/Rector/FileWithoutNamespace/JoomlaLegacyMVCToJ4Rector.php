@@ -65,6 +65,14 @@ class JoomlaLegacyMVCToJ4Rector extends AbstractRector implements ConfigurableRe
 	protected $removedAndAddedFilesCollector;
 
 	/**
+	 * Stores the renamed class map for a second pass.
+	 *
+	 * @var   RenamedClassHandlerService
+	 * @since 1.0.0
+	 */
+	private $renamedClassHandlerService;
+
+	/**
 	 * Public constructor.
 	 *
 	 * Rector (well, Symfony) automatically pushes the dependencies we ask for through its DI container.
@@ -74,10 +82,12 @@ class JoomlaLegacyMVCToJ4Rector extends AbstractRector implements ConfigurableRe
 	 * @since   1.0.0
 	 */
 	public function __construct(
-		RemovedAndAddedFilesCollector $removedAndAddedFilesCollector
+		RemovedAndAddedFilesCollector $removedAndAddedFilesCollector,
+		RenamedClassHandlerService    $renamedClassHandlerService
 	)
 	{
 		$this->removedAndAddedFilesCollector = $removedAndAddedFilesCollector;
+		$this->renamedClassHandlerService    = $renamedClassHandlerService;
 	}
 
 	/**
@@ -212,6 +222,8 @@ CODE_SAMPLE
 		{
 			return $identifier;
 		}
+
+		$this->renamedClassHandlerService->addEntry($name, $fqn, $newNamespacePrefix);
 
 		$bits = explode('\\', $fqn);
 

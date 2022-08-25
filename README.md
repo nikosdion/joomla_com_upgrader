@@ -49,7 +49,10 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 * Refactor and namespace helper classes.
 
 **What I would like to add**
-* Refactor and namespace HTML helper classes into a services.
+* Refactor and namespace HTML helper classes into services.
+  * Stored in <root>/helpers/html
+  * The <root> always has a views directory
+  * The class name starts with JHtml
 * Refactor and namespace custom form field classes.
 * Refactor and namespace custom form rule classes.
 * Refactor static getInstance calls to the base model and table classes.
@@ -109,6 +112,8 @@ use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHelpersToJ4Rector;
+use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
 
 return static function (RectorConfig $rectorConfig): void {
@@ -120,15 +125,33 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__ . '/script.php',
         // Add any more directories or files your project may be using here
     ]);
+    
+    $rectorConfig->skip([
+        // These are our auto-generated renamed class maps for the second pass 
+        __DIR__ . '_classmap.php'
+        __DIR__ . '_classmap.json'
+    ]);
+    
+    // Required to autowire the custom services used by our Rector rules
+    $services = $rectorConfig
+        ->services()
+        ->defaults()
+        ->autowire()
+        ->autoconfigure();
 
-        $rectorConfig->sets([
-            // Auto-refactor code to at least PHP 7.2 (minimum Joomla version)
-            LevelSetList::UP_TO_PHP_72,
-            // Replace legacy class names with the namespaced ones
-            __DIR__ . '/vendor/nikosdion/joomla_typehints/rector/joomla_4_0.php',
-            // Use early returns in if-blocks (code quality)
-            SetList::EARLY_RETURN,
-        ]);
+    // Register our custom services and configure them
+	$services->set(RenamedClassHandlerService::class)
+	         ->arg('$directory', __DIR__);
+
+    // Basic refactorings
+    $rectorConfig->sets([
+        // Auto-refactor code to at least PHP 7.2 (minimum Joomla version)
+        LevelSetList::UP_TO_PHP_72,
+        // Replace legacy class names with the namespaced ones
+        __DIR__ . '/vendor/nikosdion/joomla_typehints/rector/joomla_4_0.php',
+        // Use early returns in if-blocks (code quality)
+        SetList::EARLY_RETURN,
+    ]);
 
     // Configure the namespace mappings
     $joomlaNamespaceMaps = [
@@ -138,6 +161,7 @@ return static function (RectorConfig $rectorConfig): void {
 
     // Auto-refactor the Joomla MVC classes
     $rectorConfig->ruleWithConfiguration(JoomlaLegacyMVCToJ4Rector::class, $joomlaNamespaceMaps);
+    $rectorConfig->ruleWithConfiguration(JoomlaHelpersToJ4Rector::class, $joomlaNamespaceMaps);
 
     // Replace Fully Qualified Names (FQN) of classes with `use` imports at the top of the file.
     $rectorConfig->importNames();
