@@ -155,6 +155,19 @@ trait JoomlaNamespaceHandlingTrait
 		// Controller, Model and Table are pretty straightforward
 		$legacySuffixes = ['Controller', 'Model', 'Table', 'Helper'];
 
+		/**
+		 * Special case: JHtml prefix
+		 */
+		if (strtoupper(substr($legacyClassName, 0, 5)) === 'JHTML')
+		{
+			$fqn = trim($newNamespace, '\\')
+				. '\\' . $applicationSide
+				. '\\Service\\Html\\'
+				. ucfirst(strtolower(substr($legacyClassName, 5)));
+
+			return $fqn;
+		}
+
 		foreach ($legacySuffixes as $legacySuffix)
 		{
 			$fullLegacyPrefix = $componentPrefix . $legacySuffix;
