@@ -47,6 +47,7 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 **What it does**
 * Namespace all of your MVC (Model, Controller, View and Table) classes and place them into the appropriate directories.
 * Refactor and namespace helper classes.
+* Change static type hints in PHP code and docblocks.
 
 **What I would like to add**
 * Refactor and namespace HTML helper classes into services.
@@ -66,7 +67,6 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 * Replace `addfieldpath` with `addfieldprefix` in XML forms.
 
 **What it CAN NOT and WILL NOT do**
-* Change typehints in PHP docblocks. While possible in Rector it's too convoluted and time–consuming. Sorry.
 * Remove your old entry point file, possibly converting it to a custom Dispatcher.
 * Refactor static getInstance calls to _descendants of_ the base model and table classes.
 
@@ -117,6 +117,7 @@ use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHelpersToJ4Rector;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
 use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
+use Rector\Naming\Rector\JoomlaPostRefactoringClassRenameRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -164,6 +165,7 @@ return static function (RectorConfig $rectorConfig): void {
     // Auto-refactor the Joomla MVC classes
     $rectorConfig->ruleWithConfiguration(JoomlaLegacyMVCToJ4Rector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaHelpersToJ4Rector::class, $joomlaNamespaceMaps);
+    $rectorConfig->rule(JoomlaPostRefactoringClassRenameRector::class);
 
     // Replace Fully Qualified Names (FQN) of classes with `use` imports at the top of the file.
     $rectorConfig->importNames();
@@ -185,10 +187,18 @@ where `HelloWorld` is the name of your component without the `com_` prefix and `
 
 The third argument, the empty array `[]`, is a list of class names which begin with the old prefix that you do not want to namespace. I can't think of a reason why you want to do that but I can neither claim I can think of any use case. So I added that option _just in case_ you need it.
 
-Now you can run Rector to do _a hell of a lot_ of the refactoring necessary to convert your component to Joomla 4 MVC:
+Now you can run Rector to do _a hell of a lot_ of the refactoring necessary to convert your component to Joomla 4 MVC.
+
+First, we tell it to collect the classes which will be renamed but without doing any changes to the files. **THIS STEP IS MANDATORY**.
 
 ```bash
-php ./vendor/bin/rector --dry-run
+php ./vendor/bin/rector --dry-run --clear-cache
 ```
 
-The `--dry-run` parameter prints out the changes. Removing it will apply these changes _for real_ (files will be modified).
+Note: The `--dry-run` parameter prints out the changes. Now is a good time to make sure they are not wrong.
+
+Then we can run it for real (**this step modifies the files in your project**):
+
+```bash
+php ./vendor/bin/rector --clear-cache
+```

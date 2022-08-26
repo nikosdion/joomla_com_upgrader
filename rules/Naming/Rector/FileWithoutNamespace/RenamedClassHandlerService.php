@@ -90,6 +90,19 @@ final class RenamedClassHandlerService
 	}
 
 	/**
+	 * Return an old to new classname map for a specific application side
+	 *
+	 * @param   string|null  $side  The application side: admin or site.
+	 *
+	 * @return  array
+	 * @since   1.0.0
+	 */
+	public function getOldToNewMap(?string $side = 'admin')
+	{
+		return $this->map[$side] ?? [];
+	}
+
+	/**
 	 * Load the already saved class map from _classmap.json
 	 *
 	 * @return  void
