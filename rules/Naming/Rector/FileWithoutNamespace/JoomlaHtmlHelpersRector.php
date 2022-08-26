@@ -142,11 +142,6 @@ CODE_SAMPLE
 		 */
 		if ($node instanceof ClassMethod)
 		{
-			if (!$node->isPrivate())
-			{
-				return null;
-			}
-
 			return $this->refactorClassMethod($node);
 		}
 
@@ -214,6 +209,13 @@ CODE_SAMPLE
 		return null;
 	}
 
+	/**
+	 * Convert an abstract class to non-abstract
+	 *
+	 * @param   Class_  $node
+	 *
+	 * @return  Class_|null
+	 */
 	private function refactorClass(Class_ $node)
 	{
 		if (!$node->isAbstract())
@@ -225,7 +227,6 @@ CODE_SAMPLE
 
 		return $node;
 	}
-
 
 	/**
 	 * Convert a static class method to non-static
@@ -243,16 +244,25 @@ CODE_SAMPLE
 			return null;
 		}
 
+		$dirty = false;
+
+		if (($classMethod->flags & Class_::VISIBILITY_MODIFIER_MASK) === 0)
+		{
+			$this->visibilityManipulator->makePublic($classMethod);
+
+			$dirty = true;
+		}
+
 		$classReflection = $this->reflectionResolver->resolveClassReflection($classMethod);
 
 		if (!$classReflection instanceof ClassReflection)
 		{
-			return null;
+			return $dirty ? $classMethod : null;
 		}
 
 		if ($this->classMethodVisibilityGuard->isClassMethodVisibilityGuardedByParent($classMethod, $classReflection))
 		{
-			return null;
+			return $dirty ? $classMethod : null;
 		}
 
 		// Change static calls to non-static ones, but only if in non-static method!!!

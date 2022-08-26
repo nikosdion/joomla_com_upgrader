@@ -48,12 +48,9 @@ This repository provides Rector rules to automatically refactor your legacy Joom
 * Namespace all of your MVC (Model, Controller, View and Table) classes and place them into the appropriate directories.
 * Refactor and namespace helper classes.
 * Change static type hints in PHP code and docblocks.
+* Refactor and namespace HTML helper classes into HTML services.
 
 **What I would like to add**
-* Refactor and namespace HTML helper classes into services.
-  * Stored in <root>/helpers/html
-  * The <root> always has a views directory
-  * The class name starts with JHtml
 * Refactor and namespace custom form field classes.
 * Refactor and namespace custom form rule classes.
 * Refactor static getInstance calls to the base model and table classes.
@@ -118,6 +115,7 @@ use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHelpersToJ4Rector;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
 use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 use Rector\Naming\Rector\JoomlaPostRefactoringClassRenameRector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHtmlHelpersRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -165,6 +163,8 @@ return static function (RectorConfig $rectorConfig): void {
     // Auto-refactor the Joomla MVC classes
     $rectorConfig->ruleWithConfiguration(JoomlaLegacyMVCToJ4Rector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaHelpersToJ4Rector::class, $joomlaNamespaceMaps);
+    $rectorConfig->ruleWithConfiguration(JoomlaHtmlHelpersRector::class, $joomlaNamespaceMaps);
+    // Dual purpose. 1st pass: collect renamed classes. 2nd pass: apply the renaming to type hints.
     $rectorConfig->rule(JoomlaPostRefactoringClassRenameRector::class);
 
     // Replace Fully Qualified Names (FQN) of classes with `use` imports at the top of the file.

@@ -23,10 +23,8 @@ class Example
     {
         return "derp";
     }
-
-	function lol(): string
-	{
-		return "lol";
-	}
+    public function lol(): string
+    {
+        return "lol";
+    }
 }
-?>
