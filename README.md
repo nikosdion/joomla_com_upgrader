@@ -52,12 +52,12 @@ Your component project must have the structure described below.
 
 **What it already does**
 * Namespace all of your MVC (Model, Controller, View and Table) classes and place them into the appropriate directories.
-* Refactor and namespace helper classes.
-* Refactor and namespace HTML helper classes into HTML services.
+* Refactor and namespace helper classes (e.h. ExampleHelper, ExampleHelperSomething, etc).
+* Refactor and namespace HTML helper classes (e.g. JHtmlExample) into HTML services.
+* Refactor and namespace custom form field classes (e.g. JFormFieldExample, JFormFieldModal_Example, etc).
 * Change static type hints in PHP code and docblocks.
 
 **What I would like to add**
-* ⚙️ Refactor and namespace custom form field classes.
 * ⚙️ Refactor and namespace custom form rule classes.
 * ⚙️ Refactor static getInstance calls to the base model and table classes.
 * ⚙️ Refactor getModel and getView calls in controllers.
@@ -126,6 +126,7 @@ use Rector\Naming\Rector\FileWithoutNamespace\JoomlaLegacyMVCToJ4Rector;
 use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 use Rector\Naming\Rector\JoomlaPostRefactoringClassRenameRector;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHtmlHelpersRector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaFormFieldsRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -174,6 +175,7 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->ruleWithConfiguration(JoomlaLegacyMVCToJ4Rector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaHelpersToJ4Rector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaHtmlHelpersRector::class, $joomlaNamespaceMaps);
+    $rectorConfig->ruleWithConfiguration(JoomlaFormFieldsRector::class, $joomlaNamespaceMaps);
     // Dual purpose. 1st pass: collect renamed classes. 2nd pass: apply the renaming to type hints.
     $rectorConfig->rule(JoomlaPostRefactoringClassRenameRector::class);
 

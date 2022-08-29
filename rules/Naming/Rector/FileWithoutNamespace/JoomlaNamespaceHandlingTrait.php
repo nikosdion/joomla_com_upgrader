@@ -26,7 +26,7 @@ trait JoomlaNamespaceHandlingTrait
 		$path     = str_replace('\\', '/', $this->file->getFilePath());
 		$pathBits = explode('/', $path);
 
-		for ($i = 0; $i < 3; $i++)
+		while (!empty($pathBits))
 		{
 			$lastPart = array_pop($pathBits);
 
@@ -168,6 +168,24 @@ trait JoomlaNamespaceHandlingTrait
 			return $fqn;
 		}
 
+		/**
+		 * Special case: JFormField prefix
+		 */
+		if (strtoupper(substr($legacyClassName, 0, 10)) === 'JFORMFIELD')
+		{
+			$bareName = strtolower(substr($legacyClassName, 10));
+			$bareName = str_replace('_', '\\', $bareName);
+			$bareParts = explode('\\', $bareName);
+			$bareParts = array_map('ucfirst', $bareParts);
+			$bareName = implode('\\', $bareParts);
+			$fqn      = trim($newNamespace, '\\')
+				. '\\' . $applicationSide
+				. '\\Field\\'
+				. $bareName . 'Field';
+
+			return $fqn;
+		}
+
 		foreach ($legacySuffixes as $legacySuffix)
 		{
 			$fullLegacyPrefix = $componentPrefix . $legacySuffix;
@@ -204,8 +222,8 @@ trait JoomlaNamespaceHandlingTrait
 			elseif ($legacySuffix === 'Helper' && substr($legacyClassName, -6) === 'Helper')
 			{
 				// Rewrite ExampleSomethingHelper to ExampleHelperSomething for our code below to work.
-				$plain = substr($legacyClassName, strlen($componentPrefix));
-				$plain = substr($plain, 0, -strlen($legacySuffix));
+				$plain           = substr($legacyClassName, strlen($componentPrefix));
+				$plain           = substr($plain, 0, -strlen($legacySuffix));
 				$legacyClassName = $componentPrefix . $legacySuffix . $plain;
 			}
 
