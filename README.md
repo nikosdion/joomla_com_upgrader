@@ -55,10 +55,10 @@ Your component project must have the structure described below.
 * Refactor and namespace helper classes (e.h. ExampleHelper, ExampleHelperSomething, etc).
 * Refactor and namespace HTML helper classes (e.g. JHtmlExample) into HTML services.
 * Refactor and namespace custom form field classes (e.g. JFormFieldExample, JFormFieldModal_Example, etc).
+* Refactor and namespace custom form rule classes (e.g. JFormRuleExample).
 * Change static type hints in PHP code and docblocks.
 
 **What I would like to add**
-* ⚙️ Refactor and namespace custom form rule classes.
 * ⚙️ Refactor static getInstance calls to the base model and table classes.
 * ⚙️ Refactor getModel and getView calls in controllers.
 * 📁 Update the XML manifest with the namespace prefix.
@@ -127,6 +127,7 @@ use Rector\Naming\Rector\FileWithoutNamespace\RenamedClassHandlerService;
 use Rector\Naming\Rector\JoomlaPostRefactoringClassRenameRector;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaHtmlHelpersRector;
 use Rector\Naming\Rector\FileWithoutNamespace\JoomlaFormFieldsRector;
+use Rector\Naming\Rector\FileWithoutNamespace\JoomlaFormRulesRector;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->disableParallel();
@@ -176,6 +177,7 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->ruleWithConfiguration(JoomlaHelpersToJ4Rector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaHtmlHelpersRector::class, $joomlaNamespaceMaps);
     $rectorConfig->ruleWithConfiguration(JoomlaFormFieldsRector::class, $joomlaNamespaceMaps);
+    $rectorConfig->ruleWithConfiguration(JoomlaFormRulesRector::class, $joomlaNamespaceMaps);
     // Dual purpose. 1st pass: collect renamed classes. 2nd pass: apply the renaming to type hints.
     $rectorConfig->rule(JoomlaPostRefactoringClassRenameRector::class);
 

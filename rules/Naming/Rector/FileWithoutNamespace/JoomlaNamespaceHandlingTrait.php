@@ -157,6 +157,8 @@ trait JoomlaNamespaceHandlingTrait
 
 		/**
 		 * Special case: JHtml prefix
+		 *
+		 * HTML helper static classes become non-static HTML helper services, renamed and moved accordingly.
 		 */
 		if (strtoupper(substr($legacyClassName, 0, 5)) === 'JHTML')
 		{
@@ -167,11 +169,26 @@ trait JoomlaNamespaceHandlingTrait
 
 			return $fqn;
 		}
+		/**
+		 * Special case: JFormRule prefix
+		 *
+		 * Form rule classes are renamed and moved accordingly.
+		 */
+		elseif (strtoupper(substr($legacyClassName, 0, 9)) === 'JFORMRULE')
+		{
+			$fqn = trim($newNamespace, '\\')
+				. '\\' . $applicationSide
+				. '\\Rule\\'
+				. ucfirst(strtolower(substr($legacyClassName, 9))) . 'Rule';
 
+			return $fqn;
+		}
 		/**
 		 * Special case: JFormField prefix
+		 *
+		 * Form field type classes are renamed and moved accordingly.
 		 */
-		if (strtoupper(substr($legacyClassName, 0, 10)) === 'JFORMFIELD')
+		elseif (strtoupper(substr($legacyClassName, 0, 10)) === 'JFORMFIELD')
 		{
 			$bareName = strtolower(substr($legacyClassName, 10));
 			$bareName = str_replace('_', '\\', $bareName);
