@@ -24,7 +24,7 @@ use Rector\Core\PhpParser\Node\CustomNode\FileWithoutNamespace;
 use Rector\Core\Rector\AbstractRector;
 use Rector\Naming\Config\JoomlaLegacyPrefixToNamespace;
 use Rector\NodeTypeResolver\Node\AttributeKey;
-use RectorPrefix202208\Webmozart\Assert\Assert;
+use Webmozart\Assert\Assert;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 

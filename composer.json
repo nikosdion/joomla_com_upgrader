@@ -17,7 +17,8 @@
   ],
   "require": {
     "php": "^7.2 | ^8.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "webmozart/assert": "^1.11.0"
   },
   "require-dev": {
     "rector/rector": "^0.14.0",
